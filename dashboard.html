@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Command Center</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f5f6fa;
+  --card: #ffffff;
+  --text: #1a1a2e;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --accent: #4f46e5;
+  --accent-light: #eef2ff;
+  --green: #10b981;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --r: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+a { color: var(--accent); }
+
+/* ── Header ── */
+header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+header h1 { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
+.header-right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--muted); }
+.countdown-chip { background: var(--accent); color: #fff; border-radius: 999px; padding: 4px 12px; font-weight: 700; font-size: 12px; }
+
+/* ── Nav ── */
+nav {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  gap: 2px;
+  position: sticky;
+  top: 49px;
+  z-index: 19;
+}
+.tab-btn {
+  border: none;
+  background: none;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-btn:hover:not(.active) { color: var(--text); background: #f9fafb; }
+.tab-close {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1;
+  border-radius: 3px;
+  padding: 0 2px;
+  visibility: hidden;
+}
+.tab-btn:hover .tab-close { visibility: visible; }
+.tab-close:hover { background: #fee2e2; color: var(--red); }
+.tab-add-btn {
+  border: none;
+  background: none;
+  padding: 0 12px;
+  font-size: 20px;
+  color: var(--muted);
+  cursor: pointer;
+  align-self: center;
+  line-height: 1;
+  border-radius: 6px;
+}
+.tab-add-btn:hover { background: #f3f4f6; color: var(--accent); }
+.tab-name-inp {
+  padding: 4px 8px;
+  border: 1.5px solid var(--accent);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  width: 130px;
+  align-self: center;
+  outline: none;
+}
+
+/* ── Layout ── */
+main { max-width: 1600px; margin: 0 auto; padding: 20px; }
+.tab { display: none; }
+.tab.active { display: block; }
+
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 14px; margin-bottom: 20px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+.grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 20px; }
+@media (max-width: 900px) { .grid-2,.grid-2-1,.grid-1-2 { grid-template-columns: 1fr; } }
+
+/* ── Cards & Panels ── */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; }
+.card-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
+.card-value { font-size: 26px; font-weight: 800; line-height: 1; }
+.card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; margin-bottom: 16px; }
+.panel-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+
+/* ── Forms ── */
+.form-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-bottom: 14px; }
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.field input, .field select, .field textarea {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  background: #fff;
+  min-width: 120px;
+}
+.field textarea { resize: vertical; min-width: 200px; }
+button.primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  height: 36px;
+  white-space: nowrap;
+}
+button.primary:hover { background: #4338ca; }
+button.ghost {
+  background: none;
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted);
+}
+button.ghost:hover { background: #f3f4f6; }
+button.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: var(--muted);
+}
+button.icon-btn:hover { background: #f3f4f6; }
+
+/* ── Tables ── */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+td { padding: 9px 8px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+.empty { color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0; }
+
+/* ── Badges ── */
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; }
+.badge.high { background: var(--red); }
+.badge.medium { background: var(--amber); }
+.badge.low { background: var(--green); }
+.badge.cat { background: var(--accent); }
+.badge.resolved { background: var(--green); }
+.badge.open-m { background: var(--muted); }
+
+/* ── Filters ── */
+.filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.filters select, .filters input { padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 12px; }
+
+/* ── QBank ── */
+.qbank-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(430px,1fr)); gap: 10px; }
+details.qs { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+details.qs summary {
+  list-style: none;
+  padding: 10px 14px;
+  background: #f9fafb;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 13px;
+}
+details.qs summary::-webkit-details-marker { display: none; }
+.sum-right { display: flex; align-items: center; gap: 8px; font-weight: 400; font-size: 12px; color: var(--muted); }
+.pbar { width: 80px; height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; flex-shrink: 0; }
+.pbar-fill { height: 100%; background: var(--accent); }
+.qnum { width: 52px; padding: 3px 6px; border: 1px solid var(--border); border-radius: 5px; font: inherit; font-size: 12px; text-align: center; }
+tr.row-red { background: #fef2f2; }
+tr.row-amber { background: #fffbeb; }
+.topic-btn { background: none; border: none; font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; text-align: left; padding: 0; }
+.topic-btn:hover { color: var(--accent); text-decoration-color: var(--accent); }
+.acc-good { color: var(--green); font-weight: 700; }
+.acc-mid { color: var(--amber); font-weight: 700; }
+.acc-low { color: var(--red); font-weight: 700; }
+.acc-none { color: var(--muted); }
+
+/* ── Study Plan ── */
+.phase-bar { height: 14px; border-radius: 999px; overflow: hidden; display: flex; margin: 10px 0 4px; }
+.phase-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #fff; transition: width .3s; }
+.fl-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap: 8px; margin-top: 10px; }
+.fl-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; cursor: pointer; }
+.fl-card.done-fl { border-color: var(--green); background: #f0fdf4; }
+.fl-card label { cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; }
+.fl-card input[type=date], .fl-card input[type=number] { width: 100%; margin-top: 4px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 5px; font: inherit; font-size: 12px; }
+
+/* ── Mistakes ── */
+.mistake-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; }
+.mistake-card.resolved-card { opacity: .6; }
+.mistake-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 4px; }
+.mistake-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.mistake-notes { font-size: 13px; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); color: #374151; }
+.error-type-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.Content-gap { background: #fef9c3; color: #854d0e; }
+.Careless { background: #fee2e2; color: #991b1b; }
+.Trap { background: #fce7f3; color: #9d174d; }
+.Application { background: #e0e7ff; color: #3730a3; }
+.Timing { background: #ffedd5; color: #9a3412; }
+.Reasoning { background: #dcfce7; color: #14532d; }
+
+/* ── Review ── */
+.rev-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
+.rev-item:hover { border-color: var(--accent); }
+.rev-item.ri-red { background: #fef2f2; border-color: #fca5a5; }
+.rev-item.ri-amber { background: #fffbeb; border-color: #fde68a; }
+.rev-left { display: flex; flex-direction: column; gap: 2px; }
+.rev-subj { font-size: 11px; color: var(--muted); }
+
+/* ── Modal ── */
+.overlay { position: fixed; inset: 0; background: rgba(17,24,39,.45); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.overlay.open { display: flex; }
+.modal { background: var(--card); border-radius: var(--r); padding: 22px; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; }
+.modal h2 { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+.modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+.modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted); float: right; line-height: 1; }
+.link-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; font-size: 13px; }
+.link-row a { color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
+.flag-row { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 13px; cursor: pointer; }
+.modal-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); display: block; margin-bottom: 5px; margin-top: 12px; }
+.modal textarea { width: 100%; min-height: 100px; padding: 9px; border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 13px; resize: vertical; }
+
+/* ── Notion Blocks ── */
+.notion-page-title { font-size: 28px; font-weight: 800; border: none; background: transparent; width: 100%; padding: 6px 4px; outline: none; margin-bottom: 16px; font: 800 28px/1.2 inherit; }
+.notion-page-title:focus { background: #f9fafb; border-radius: 6px; }
+.block-wrap { position: relative; padding: 4px 4px 4px 28px; border-radius: 6px; margin-bottom: 4px; }
+.block-wrap:hover { background: #f9fafb; }
+.block-wrap:hover .block-ctrl { display: flex; }
+.block-ctrl { display: none; position: absolute; left: 2px; top: 6px; flex-direction: column; gap: 2px; }
+.block-ctrl button { background: none; border: none; cursor: pointer; font-size: 12px; color: var(--muted); padding: 1px 3px; border-radius: 3px; line-height: 1; }
+.block-ctrl button:hover { background: #e5e7eb; }
+.notion-h { font-size: 20px; font-weight: 800; border: none; background: transparent; width: 100%; padding: 4px; outline: none; font: 800 20px/1.3 inherit; }
+.notion-h:focus { background: #f9fafb; border-radius: 4px; }
+.notion-text { width: 100%; border: none; background: transparent; resize: none; padding: 4px; outline: none; font: inherit; font-size: 14px; line-height: 1.6; overflow: hidden; min-height: 28px; }
+.notion-text:focus { background: #f9fafb; border-radius: 4px; }
+.notion-divider { border: none; border-top: 2px solid var(--border); margin: 8px 0; }
+.checklist-item { display: flex; align-items: flex-start; gap: 8px; padding: 3px 4px; border-radius: 4px; }
+.checklist-item:hover { background: #f3f4f6; }
+.checklist-item input[type=checkbox] { margin-top: 2px; flex-shrink: 0; }
+.checklist-item .ci-text { flex: 1; border: none; background: transparent; font: inherit; font-size: 14px; outline: none; padding: 0; }
+.checklist-item .ci-del { visibility: hidden; cursor: pointer; background: none; border: none; font-size: 14px; color: var(--muted); padding: 0 2px; }
+.checklist-item:hover .ci-del { visibility: visible; }
+.block-add-bar { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 4px; opacity: .5; transition: opacity .15s; }
+.block-add-bar:hover { opacity: 1; }
+.block-add-bar button { background: none; border: 1px dashed var(--border); border-radius: 6px; padding: 5px 10px; font: inherit; font-size: 12px; color: var(--muted); cursor: pointer; }
+.block-add-bar button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.links-block-list { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧭 Command Center</h1>
+  <div class="header-right">
+    <span id="hdrDate"></span>
+    <span class="countdown-chip" id="hdrCountdown"></span>
+  </div>
+</header>
+
+<nav id="mainNav">
+  <button class="tab-btn active" data-tab="dashboard">🏠 Dashboard</button>
+  <button class="tab-btn" data-tab="tasks">✅ Tasks</button>
+  <button class="tab-btn" data-tab="mcat">📚 MCAT</button>
+  <button class="tab-btn" data-tab="mistakes">⚠️ Mistakes</button>
+  <button class="tab-btn" data-tab="review">🔍 Review</button>
+  <button class="tab-btn" data-tab="health">💪 Health</button>
+  <span id="customTabsNav"></span>
+  <button class="tab-add-btn" id="addTabBtn" onclick="promptAddTab()" title="Add tab">+</button>
+</nav>
+
+<main id="mainContent">
+<!-- ════════════════ DASHBOARD ════════════════ -->
+<div class="tab active" id="tab-dashboard">
+  <div class="grid-3" id="dashCards"></div>
+  <div class="grid-2-1">
+    <div>
+      <div class="panel" id="studyPlanPanel">
+        <div class="panel-title">📅 Study Plan — MCAT Sept 11, 2026</div>
+        <div id="studyPlanContent"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Upcoming tasks</div>
+        <div id="dashTasks"></div>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-title">Recent activity</div>
+        <div id="dashActivity"></div>
+      </div>
+      <div class="panel" style="margin-top:0">
+        <div class="panel-title">This week's weak spots</div>
+        <div id="dashWeakList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ TASKS ════════════════ -->
+<div class="tab" id="tab-tasks">
+  <div class="panel">
+    <div class="panel-title">Add task</div>
+    <div class="form-row">
+      <div class="field"><label>Title</label><input id="tTitle" placeholder="e.g. Review amino acids" style="min-width:220px"></div>
+      <div class="field"><label>Category</label><input id="tCat" list="catList" placeholder="Work / MCAT..."><datalist id="catList"><option value="MCAT"><option value="Work"><option value="Personal"><option value="Health"></datalist></div>
+      <div class="field"><label>Due</label><input type="date" id="tDue"></div>
+      <div class="field"><label>Priority</label><select id="tPri"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
+      <button class="primary" onclick="addTask()">Add</button>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="filters">
+      <select id="tfStatus" onchange="renderTasks()"><option value="open" selected>Open</option><option value="done">Done</option><option value="all">All</option></select>
+      <select id="tfCat" onchange="renderTasks()"><option value="all">All categories</option></select>
+      <select id="tSort" onchange="renderTasks()"><option value="due">By due date</option><option value="priority">By priority</option><option value="created">By added</option></select>
+    </div>
+    <table><thead><tr><th></th><th>Task</th><th>Category</th><th>Due</th><th>Priority</th><th></th></tr></thead>
+    <tbody id="taskTbody"></tbody></table>
+    <div class="empty" id="taskEmpty" style="display:none">No tasks. Add one above.</div>
+  </div>
+</div>
+
+<!-- ════════════════ MCAT ════════════════ -->
+<div class="tab" id="tab-mcat">
+  <div class="grid-3" id="mcatCards"></div>
+  <div class="grid-2-1">
+    <div class="panel">
+      <div class="panel-title">Question bank progress</div>
+      <div class="grid-3" id="qbankCards" style="margin-bottom:14px"></div>
+      <div class="qbank-grid" id="qbankSubjects"></div>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-title">Accuracy by subject</div>
+        <canvas id="qbankAccChart" height="220"></canvas>
+      </div>
+      <div class="panel">
+        <div class="panel-title">🔴 Weak topics (top 6)</div>
+        <div id="mcatWeakList"></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">Log study session</div>
+      <div class="form-row">
+        <div class="field"><label>Date</label><input type="date" id="sessDate"></div>
+        <div class="field"><label>Section / topic</label><input id="sessTopic" list="secList" placeholder="e.g. Bio/Biochem – enzymes" style="min-width:200px"><datalist id="secList"><option value="Chem/Phys"><option value="CARS"><option value="Bio/Biochem"><option value="Psych/Soc"></datalist></div>
+        <div class="field"><label>Hours</label><input type="number" id="sessHrs" step=".25" min="0" style="width:72px" placeholder="2"></div>
+        <div class="field"><label>Notes</label><textarea id="sessNotes" rows="1" placeholder="optional"></textarea></div>
+        <button class="primary" onclick="addSession()">Log</button>
+      </div>
+      <table><thead><tr><th>Date</th><th>Topic</th><th>Hrs</th><th>Notes</th><th></th></tr></thead><tbody id="sessTbody"></tbody></table>
+      <div class="empty" id="sessEmpty" style="display:none">No sessions yet.</div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Practice test scores</div>
+      <div class="form-row">
+        <div class="field"><label>Date</label><input type="date" id="scoreDate"></div>
+        <div class="field"><label>Test name</label><input id="scoreName" placeholder="e.g. AAMC FL1" style="min-width:140px"></div>
+        <div class="field"><label>Score</label><input type="number" id="scoreVal" min="472" max="528" style="width:80px" placeholder="510"></div>
+        <button class="primary" onclick="addScore()">Add</button>
+      </div>
+      <table><thead><tr><th>Date</th><th>Test</th><th>Score</th><th></th></tr></thead><tbody id="scoreTbody"></tbody></table>
+      <div class="empty" id="scoreEmpty" style="display:none">No scores yet.</div>
+      <canvas id="scoreChart" height="180" style="margin-top:12px"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ MISTAKES ════════════════ -->
+<div class="tab" id="tab-mistakes">
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">Log a mistake</div>
+      <div class="form-row">
+        <div class="field"><label>Date</label><input type="date" id="mDate"></div>
+        <div class="field"><label>Section</label>
+          <select id="mSection">
+            <option value="Chem/Phys">Chem/Phys</option>
+            <option value="CARS">CARS</option>
+            <option value="Bio/Biochem">Bio/Biochem</option>
+            <option value="Psych/Soc">Psych/Soc</option>
+          </select>
+        </div>
+        <div class="field"><label>Topic</label><input id="mTopic" placeholder="e.g. Enzymes – Michaelis-Menten" style="min-width:200px" list="topicSuggest"><datalist id="topicSuggest"></datalist></div>
+        <div class="field"><label>Error type</label>
+          <select id="mError">
+            <option>Content gap</option>
+            <option>Careless</option>
+            <option>Trap</option>
+            <option>Application</option>
+            <option>Timing</option>
+            <option>Reasoning</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field" style="flex:1"><label>Description (what was the Q about?)</label><textarea id="mDesc" rows="2" placeholder="Brief description of the question or concept..." style="min-width:100%;width:100%"></textarea></div>
+      </div>
+      <div class="form-row">
+        <div class="field" style="flex:1"><label>Correction / what to remember</label><textarea id="mNotes" rows="2" placeholder="What's the correct reasoning? What to review?" style="min-width:100%;width:100%"></textarea></div>
+      </div>
+      <button class="primary" onclick="addMistake()">Log mistake</button>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="panel-title">Error breakdown by type</div>
+        <canvas id="errTypeChart" height="200"></canvas>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Mistakes by section</div>
+        <canvas id="errSectionChart" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="filters">
+      <select id="mfSection" onchange="renderMistakes()"><option value="all">All sections</option><option>Chem/Phys</option><option>CARS</option><option>Bio/Biochem</option><option>Psych/Soc</option></select>
+      <select id="mfError" onchange="renderMistakes()"><option value="all">All error types</option><option>Content gap</option><option>Careless</option><option>Trap</option><option>Application</option><option>Timing</option><option>Reasoning</option></select>
+      <select id="mfResolved" onchange="renderMistakes()"><option value="open">Unresolved</option><option value="all">All</option><option value="resolved">Resolved</option></select>
+    </div>
+    <div id="mistakeList"></div>
+    <div class="empty" id="mistakeEmpty" style="display:none">No mistakes logged yet.</div>
+  </div>
+</div>
+
+<!-- ════════════════ REVIEW ════════════════ -->
+<div class="tab" id="tab-review">
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">🔴 Needs improvement <span style="font-size:12px;color:var(--muted);font-weight:400">(accuracy &lt; 75%)</span></div>
+      <div id="revNeedsWork"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">🚩 Flagged for review</div>
+      <div id="revFlagged"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ HEALTH ════════════════ -->
+<div class="tab" id="tab-health">
+  <div class="grid-3" id="healthCards"></div>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">Log weight</div>
+      <div class="form-row">
+        <div class="field"><label>Date</label><input type="date" id="wDate"></div>
+        <div class="field"><label>Weight (lbs)</label><input type="number" id="wVal" step=".1" style="width:90px" placeholder="180"></div>
+        <button class="primary" onclick="addWeight()">Log</button>
+      </div>
+      <table><thead><tr><th>Date</th><th>Weight</th><th>Change</th><th></th></tr></thead><tbody id="weightTbody"></tbody></table>
+      <div class="empty" id="weightEmpty" style="display:none">No entries.</div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Log food</div>
+      <div class="form-row">
+        <div class="field"><label>Date</label><input type="date" id="fDate"></div>
+        <div class="field"><label>Meal</label><select id="fMeal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select></div>
+        <div class="field"><label>Description</label><input id="fDesc" placeholder="e.g. grilled chicken salad" style="min-width:180px"></div>
+        <div class="field"><label>Cal (opt.)</label><input type="number" id="fCal" style="width:80px" placeholder="500"></div>
+        <button class="primary" onclick="addFood()">Log</button>
+      </div>
+      <table><thead><tr><th>Date</th><th>Meal</th><th>Food</th><th>Cal</th><th></th></tr></thead><tbody id="foodTbody"></tbody></table>
+      <div class="empty" id="foodEmpty" style="display:none">No entries.</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Weight trend</div>
+    <canvas id="weightChart" height="160"></canvas>
+  </div>
+</div>
+</main>
+
+<!-- ════════════════ TOPIC MODAL ════════════════ -->
+<div class="overlay" id="topicOverlay" onclick="if(event.target===this)closeTopicModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeTopicModal()">&times;</button>
+    <h2 id="tmTitle"></h2>
+    <div class="modal-sub" id="tmSub"></div>
+    <label class="flag-row"><input type="checkbox" id="tmFlag" onchange="toggleFlag(this.checked)"> Flag for review</label>
+    <span class="modal-label">Notes</span>
+    <textarea id="tmNotes" placeholder="Key concepts, common traps, things to remember..." onchange="saveTopicNotes(this.value)"></textarea>
+    <span class="modal-label">Resources & links</span>
+    <div id="tmLinks"></div>
+    <div class="form-row" style="margin-top:8px">
+      <div class="field"><label>Label</label><input id="tmLinkLabel" placeholder="Khan Academy..."></div>
+      <div class="field"><label>URL</label><input id="tmLinkUrl" placeholder="https://..." style="min-width:200px"></div>
+      <button class="primary" onclick="addTopicLink()">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════
+   CONSTANTS
+════════════════════════════════════════════════ */
+const QBANK = [
+  ["Behavioral Sciences",[["Biological Basis of Behavior",2],["Sensation, Perception, and Consciousness",47],["Learning, Memory, and Cognition",79],["Motivation, Emotion, Attitudes, Personality, and Stress",30],["Psychological Disorders and Treatment",5],["Theories and Research in Sociology",3],["Identity and Social Interaction",71],["Demographics and Social Structure",52]]],
+  ["Biochemistry",[["Amino Acids and Proteins",187],["Enzymes",120],["Carbohydrates, Nucleotides, and Lipids",84],["Metabolic Reactions",135],["Biochemistry Lab Techniques",6]]],
+  ["Biology",[["Molecular Biology",70],["Biological Research Techniques",1],["Cellular Biology",77],["Genetics and Evolution",64],["Reproduction",35],["Endocrine and Nervous Systems",89],["Circulation and Respiration",49],["Digestion and Excretion",57],["Musculoskeletal System",44],["Skin and Immune Systems",40]]],
+  ["Critical Analysis & Reasoning Skills",[["Humanities",267],["Social Sciences",196]]],
+  ["General Chemistry",[["Atomic Theory and Chemical Composition",118],["Interactions of Chemical Substances",105],["Thermodynamics, Kinetics & Gas Laws",121],["Solutions and Electrochemistry",141]]],
+  ["Organic Chemistry",[["Introduction to Organic Chemistry",88],["Functional Groups and Their Reactions",145],["Separation Techniques, Spectroscopy, and Analytical Methods",82]]],
+  ["Physics",[["Mechanics and Energy",77],["Fluids",80],["Electrostatics and Circuits",94],["Light and Sound",111],["Thermodynamics",32]]]
+];
+const MCAT_SECTIONS = ["Chem/Phys","CARS","Bio/Biochem","Psych/Soc"];
+const ERROR_TYPES = ["Content gap","Careless","Trap","Application","Timing","Reasoning"];
+const TEST_DATE = '2026-09-11';
+
+/* ════════════════════════════════════════════════
+   UTILS
+════════════════════════════════════════════════ */
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const todayStr = () => new Date().toISOString().slice(0,10);
+function daysUntil(d) {
+  const diff = new Date(d+'T00:00:00') - new Date(todayStr()+'T00:00:00');
+  return Math.ceil(diff/86400000);
+}
+function fmtDate(s) {
+  if(!s) return '—';
+  return new Date(s+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+}
+function H(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function A(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+function accCls(pct,done){ if(!done) return 'acc-none'; if(pct>=75) return 'acc-good'; if(pct>=60) return 'acc-mid'; return 'acc-low'; }
+function autoResize(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+
+/* ════════════════════════════════════════════════
+   DATA
+════════════════════════════════════════════════ */
+const DEFAULT_FLS = [
+  {id:'fl1',name:'FL 1',date:'2026-08-10',done:false,score:null},
+  {id:'fl2',name:'FL 2',date:'2026-08-16',done:false,score:null},
+  {id:'fl3',name:'FL 3',date:'2026-08-22',done:false,score:null},
+  {id:'fl4',name:'FL 4',date:'2026-08-28',done:false,score:null},
+  {id:'fl5',name:'FL 5',date:'2026-09-03',done:false,score:null},
+  {id:'fl6',name:'FL 6',date:'2026-09-07',done:false,score:null}
+];
+
+function freshData(){
+  return {
+    tasks:[], mcatSessions:[], mcatScores:[], weights:[], food:[],
+    qbank:{}, topicNotes:{}, mistakes:[], customTabs:[],
+    studyPlan:{
+      testDate: TEST_DATE,
+      ankiDailyTarget: 200,
+      ankiTotalDone: 0,
+      aamcQbankTotal: 300,
+      aamcQbankDone: 0,
+      fls: JSON.parse(JSON.stringify(DEFAULT_FLS))
+    }
+  };
+}
+
+const SK = 'mcat_cc_v2';
+function loadData(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SK)||'null');
+    if(!d) return freshData();
+    const def = freshData();
+    const merged = Object.assign(def, d);
+    if(!merged.qbank) merged.qbank={};
+    if(!merged.topicNotes) merged.topicNotes={};
+    if(!merged.mistakes) merged.mistakes=[];
+    if(!merged.customTabs) merged.customTabs=[];
+    if(!merged.studyPlan) merged.studyPlan=def.studyPlan;
+    if(!merged.studyPlan.fls) merged.studyPlan.fls=JSON.parse(JSON.stringify(DEFAULT_FLS));
+    return merged;
+  }catch(e){ return freshData(); }
+}
+let D = loadData();
+function save(){ localStorage.setItem(SK, JSON.stringify(D)); }
+
+const charts = {};
+function mkChart(id,config){
+  if(charts[id]) charts[id].destroy();
+  const el = document.getElementById(id);
+  if(!el) return;
+  charts[id] = new Chart(el, config);
+}
+
+/* ════════════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════════════ */
+let activeTab = 'dashboard';
+let activeCustomTab = null;
+
+function showTab(name){
+  activeTab = name;
+  activeCustomTab = null;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  const tabEl = document.getElementById('tab-'+name);
+  if(tabEl) tabEl.classList.add('active');
+  document.querySelectorAll(`[data-tab="${name}"]`).forEach(b=>b.classList.add('active'));
+}
+
+function showCustomTab(id){
+  activeCustomTab = id;
+  activeTab = null;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  const el = document.getElementById('tab-custom-'+id);
+  if(el){ el.classList.add('active'); renderCustomTab(id); }
+  document.querySelectorAll(`[data-ctab="${id}"]`).forEach(b=>b.classList.add('active'));
+}
+
+function renderNav(){
+  const container = document.getElementById('customTabsNav');
+  container.innerHTML = D.customTabs.map(tab=>`
+    <button class="tab-btn" data-ctab="${tab.id}" onclick="showCustomTab('${A(tab.id)}')">
+      <span>${H(tab.emoji||'📄')}</span>
+      <span id="tname-${tab.id}">${H(tab.name)}</span>
+      <span class="tab-close" onclick="event.stopPropagation();deleteCustomTab('${A(tab.id)}')" title="Delete">&times;</span>
+    </button>
+  `).join('');
+
+  // Make custom tab names double-click renameable
+  D.customTabs.forEach(tab=>{
+    const btn = document.querySelector(`[data-ctab="${tab.id}"]`);
+    if(btn){
+      btn.ondblclick = (e)=>{ e.stopPropagation(); startRenameTab(tab.id); };
+    }
+  });
+
+  // Sync custom tab content divs
+  D.customTabs.forEach(tab=>{
+    if(!document.getElementById('tab-custom-'+tab.id)){
+      const d = document.createElement('div');
+      d.className='tab'; d.id='tab-custom-'+tab.id;
+      document.getElementById('mainContent').appendChild(d);
+    }
+  });
+  document.querySelectorAll('.tab[id^="tab-custom-"]').forEach(el=>{
+    const tid = el.id.replace('tab-custom-','');
+    if(!D.customTabs.find(t=>t.id===tid)) el.remove();
+  });
+  if(activeCustomTab) document.querySelectorAll(`[data-ctab="${activeCustomTab}"]`).forEach(b=>b.classList.add('active'));
+}
+
+document.querySelectorAll('.tab-btn[data-tab]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    showTab(btn.dataset.tab);
+    renderAll();
+  });
+});
+
+function promptAddTab(){
+  const nav = document.getElementById('mainNav');
+  const addBtn = document.getElementById('addTabBtn');
+  addBtn.style.display='none';
+  const inp = document.createElement('input');
+  inp.className='tab-name-inp'; inp.placeholder='Page name...';
+  nav.appendChild(inp); inp.focus();
+  function finish(){
+    const name = inp.value.trim();
+    inp.remove(); addBtn.style.display='';
+    if(name){
+      const id = uid();
+      D.customTabs.push({id, name, emoji:'📄', blocks:[]});
+      save(); renderNav(); showCustomTab(id);
+    }
+  }
+  inp.onblur = finish;
+  inp.onkeydown = e=>{ if(e.key==='Enter') inp.blur(); if(e.key==='Escape'){inp.value='';inp.blur();} };
+}
+
+function deleteCustomTab(id){
+  if(!confirm('Delete this tab?')) return;
+  D.customTabs = D.customTabs.filter(t=>t.id!==id);
+  save(); renderNav();
+  if(activeCustomTab===id){ showTab('dashboard'); renderAll(); }
+}
+
+function startRenameTab(id){
+  const span = document.getElementById('tname-'+id);
+  if(!span) return;
+  const tab = D.customTabs.find(t=>t.id===id);
+  if(!tab) return;
+  span.contentEditable='true';
+  span.focus();
+  document.execCommand('selectAll');
+  span.onblur = ()=>{
+    span.contentEditable='false';
+    const newName = span.textContent.trim()||tab.name;
+    tab.name = newName; span.textContent = newName; save();
+  };
+  span.onkeydown = e=>{ if(e.key==='Enter'){e.preventDefault();span.blur();} };
+}
+
+/* ════════════════════════════════════════════════
+   STUDY PLAN
+════════════════════════════════════════════════ */
+function studyPlanStats(){
+  const sp = D.studyPlan;
+  const testDate = sp.testDate || TEST_DATE;
+  const phase1End = '2026-08-09';
+  const phase2End = '2026-09-07';
+  const today = todayStr();
+  const totalDays = daysUntil(testDate);
+
+  // UWorld progress
+  let uwDone=0; const uwTotal=3004;
+  QBANK.forEach(([s,topics])=>topics.forEach(([t,tot])=>{ const p=D.qbank[s+'::'+t]; if(p) uwDone+=p.done||0; }));
+  const uwRem = uwTotal - uwDone;
+  const daysToPhase1End = Math.max(1, daysUntil(phase1End));
+  const uwPerDay = Math.ceil(uwRem / Math.max(1,daysToPhase1End));
+
+  // AAMC
+  const aamcDone = sp.aamcQbankDone||0;
+  const aamcTotal = sp.aamcQbankTotal||300;
+
+  // FLs
+  const flsDone = (sp.fls||[]).filter(f=>f.done).length;
+  const flsTotal = (sp.fls||[]).length;
+
+  return { testDate, phase1End, phase2End, today, totalDays, uwDone, uwTotal, uwRem, uwPerDay,
+           aamcDone, aamcTotal, flsDone, flsTotal };
+}
+
+function renderStudyPlan(){
+  const s = studyPlanStats();
+  const sp = D.studyPlan;
+  const p1Days=56, p2Days=29, finalDays=3, total=88;
+
+  // Phase bar width %
+  const p1w = Math.round(p1Days/total*100);
+  const p2w = Math.round(p2Days/total*100);
+  const finalw = 100-p1w-p2w;
+
+  // "You are here" pct
+  const elapsed = total - Math.max(0,s.totalDays);
+  const herePct = Math.min(100, Math.round(elapsed/total*100));
+
+  const uwPct = Math.round(s.uwDone/s.uwTotal*100);
+  const aamcPct = Math.round(s.aamcDone/s.aamcTotal*100);
+
+  document.getElementById('studyPlanContent').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="flex:1">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700">Days remaining</div>
+        <div style="font-size:32px;font-weight:800;line-height:1;color:var(--accent)">${Math.max(0,s.totalDays)}</div>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700">UWorld/day needed</div>
+        <div style="font-size:22px;font-weight:800;color:${s.uwPerDay>60?'var(--red)':'var(--text)'}">${s.uwRem>0?s.uwPerDay:'✓ Done!'}</div>
+        <div style="font-size:11px;color:var(--muted)">${s.uwDone}/${s.uwTotal} done (${uwPct}%)</div>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700">Anki daily target</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="number" id="spAnkiTarget" value="${sp.ankiDailyTarget||200}" style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;font:inherit;font-size:18px;font-weight:800" onchange="D.studyPlan.ankiDailyTarget=+this.value;save()">
+          <span style="font-size:11px;color:var(--muted)">cards/day</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="position:relative">
+      <div class="phase-bar">
+        <div class="phase-seg" style="width:${p1w}%;background:#4f46e5">Phase 1</div>
+        <div class="phase-seg" style="width:${p2w}%;background:#7c3aed">Phase 2</div>
+        <div class="phase-seg" style="width:${finalw}%;background:#a78bfa">Final</div>
+      </div>
+      <div style="position:absolute;top:0;left:${herePct}%;height:14px;width:2px;background:#ff4444;transform:translateX(-50%)"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:12px">
+      <span>Jun 15 · Phase 1: UWorld + Anki</span>
+      <span>Aug 10 · Phase 2: AAMC</span>
+      <span>Sep 11 🎯</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">UWorld</div>
+        <div style="height:6px;background:var(--border);border-radius:999px;margin:6px 0"><div style="height:100%;width:${uwPct}%;background:var(--accent);border-radius:999px"></div></div>
+        <div style="font-size:12px;font-weight:700">${uwPct}% <span style="font-weight:400;color:var(--muted)">(${s.uwDone}/${s.uwTotal})</span></div>
+      </div>
+      <div style="background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">AAMC Qbank</div>
+        <div style="height:6px;background:var(--border);border-radius:999px;margin:6px 0"><div style="height:100%;width:${aamcPct}%;background:#7c3aed;border-radius:999px"></div></div>
+        <div style="font-size:12px;font-weight:700">${aamcPct}% <span style="font-weight:400;color:var(--muted)">(${s.aamcDone}/${s.aamcTotal})</span></div>
+        <input type="number" value="${s.aamcDone}" min="0" max="${s.aamcTotal}" style="margin-top:4px;width:100%;padding:3px 5px;border:1px solid var(--border);border-radius:5px;font:inherit;font-size:11px" placeholder="Qs done" onchange="D.studyPlan.aamcQbankDone=+this.value;save();renderStudyPlan()">
+      </div>
+      <div style="background:#f9fafb;border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Full Lengths</div>
+        <div style="height:6px;background:var(--border);border-radius:999px;margin:6px 0"><div style="height:100%;width:${Math.round(s.flsDone/s.flsTotal*100)}%;background:var(--green);border-radius:999px"></div></div>
+        <div style="font-size:12px;font-weight:700">${s.flsDone}/${s.flsTotal} completed</div>
+      </div>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">FL Schedule</div>
+    <div class="fl-grid">
+      ${(sp.fls||[]).map(fl=>`
+        <div class="fl-card ${fl.done?'done-fl':''}" id="fl-${fl.id}">
+          <label><input type="checkbox" ${fl.done?'checked':''} onchange="toggleFL('${fl.id}',this.checked)"> ${H(fl.name)}</label>
+          <input type="date" value="${fl.date||''}" onchange="setFLDate('${fl.id}',this.value)">
+          <input type="number" value="${fl.score||''}" min="472" max="528" placeholder="Score (opt.)" onchange="setFLScore('${fl.id}',+this.value)">
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function toggleFL(id, checked){ const fl=D.studyPlan.fls.find(f=>f.id===id); if(fl){fl.done=checked;save();renderStudyPlan();} }
+function setFLDate(id, val){ const fl=D.studyPlan.fls.find(f=>f.id===id); if(fl){fl.date=val;save();} }
+function setFLScore(id, val){ const fl=D.studyPlan.fls.find(f=>f.id===id); if(fl){fl.score=val;save();} }
+
+/* ════════════════════════════════════════════════
+   DASHBOARD
+════════════════════════════════════════════════ */
+function renderDashboard(){
+  const sp = studyPlanStats();
+  const openTasks = D.tasks.filter(t=>!t.done);
+  const overdue = openTasks.filter(t=>t.due&&t.due<todayStr());
+  const dueToday = openTasks.filter(t=>t.due===todayStr());
+  const wts = D.weights.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const latestW = wts.length?wts[wts.length-1]:null;
+  const openMistakes = D.mistakes.filter(m=>!m.resolved).length;
+
+  document.getElementById('dashCards').innerHTML = `
+    <div class="card"><div class="card-label">Days to MCAT</div><div class="card-value" style="color:var(--accent)">${Math.max(0,sp.totalDays)}</div><div class="card-sub">Sept 11, 2026 🎯</div></div>
+    <div class="card"><div class="card-label">UWorld</div><div class="card-value">${Math.round(sp.uwDone/sp.uwTotal*100)}%</div><div class="card-sub">${sp.uwDone}/${sp.uwTotal} · ${sp.uwRem>0?sp.uwPerDay+' Q/day needed':'complete!'}</div></div>
+    <div class="card"><div class="card-label">Full Lengths</div><div class="card-value">${sp.flsDone}/${sp.flsTotal}</div><div class="card-sub">completed</div></div>
+    <div class="card"><div class="card-label">Open tasks</div><div class="card-value">${openTasks.length}</div><div class="card-sub">${overdue.length} overdue · ${dueToday.length} today</div></div>
+    <div class="card"><div class="card-label">Unresolved mistakes</div><div class="card-value" style="color:${openMistakes>10?'var(--red)':'var(--text)'}">${openMistakes}</div><div class="card-sub">of ${D.mistakes.length} total</div></div>
+    <div class="card"><div class="card-label">Weight</div><div class="card-value">${latestW?latestW.weight:'—'}</div><div class="card-sub">${latestW?fmtDate(latestW.date):'No entries'}</div></div>
+  `;
+
+  renderStudyPlan();
+
+  // Upcoming tasks
+  const upcoming = openTasks.filter(t=>t.due).sort((a,b)=>a.due.localeCompare(b.due)).slice(0,7);
+  const dashT = document.getElementById('dashTasks');
+  dashT.innerHTML = upcoming.length?
+    '<table><tbody>'+upcoming.map(t=>{
+      const ov = t.due&&t.due<todayStr();
+      return `<tr>
+        <td><input type="checkbox" onchange="toggleTask('${t.id}')"></td>
+        <td>${H(t.title)}</td>
+        <td><span class="badge cat">${H(t.category)}</span></td>
+        <td style="${ov?'color:var(--red);font-weight:700':''}">${fmtDate(t.due)}</td>
+        <td><span class="badge ${t.priority}">${t.priority}</span></td>
+      </tr>`;
+    }).join('')+'</tbody></table>':
+    '<div class="empty">No upcoming tasks.</div>';
+
+  // Activity feed
+  const acts = [];
+  D.mcatSessions.forEach(s=>acts.push({date:s.date,txt:`Studied ${H(s.topic)} · ${s.hours}h`}));
+  D.mistakes.forEach(m=>acts.push({date:m.date,txt:`Mistake: ${H(m.topic||m.section)} (${H(m.errorType||'')})`}));
+  D.weights.forEach(w=>acts.push({date:w.date,txt:`Weight: ${w.weight} lbs`}));
+  D.mcatScores.forEach(s=>acts.push({date:s.date,txt:`Practice test ${H(s.name)}: ${s.score}`}));
+  acts.sort((a,b)=>b.date.localeCompare(a.date));
+  const actEl = document.getElementById('dashActivity');
+  actEl.innerHTML = acts.length?
+    '<table><tbody>'+acts.slice(0,8).map(a=>`<tr><td style="white-space:nowrap;color:var(--muted);font-size:12px">${fmtDate(a.date)}</td><td>${a.txt}</td></tr>`).join('')+'</tbody></table>':
+    '<div class="empty">No activity yet.</div>';
+
+  // Weak spots mini list
+  const allTS = allTopicStats();
+  const weak = allTS.filter(i=>i.pct!==null&&i.pct<75).sort((a,b)=>a.pct-b.pct).slice(0,5);
+  const dwEl = document.getElementById('dashWeakList');
+  dwEl.innerHTML = weak.length?
+    weak.map(i=>`<div class="rev-item ${i.pct<60?'ri-red':'ri-amber'}" onclick="openTopicModal('${A(i.subject)}','${A(i.topic)}')">
+      <div class="rev-left"><div>${H(i.topic)}</div><div class="rev-subj">${H(i.subject)}</div></div>
+      <div class="${accCls(i.pct,i.done)}">${i.pct}%</div>
+    </div>`).join(''):
+    '<div class="empty">No weak topics yet. Log QBank progress in the MCAT tab.</div>';
+}
+
+/* ════════════════════════════════════════════════
+   TASKS
+════════════════════════════════════════════════ */
+const PRI_RANK = {high:0,medium:1,low:2};
+
+function addTask(){
+  const title = document.getElementById('tTitle').value.trim();
+  if(!title) return;
+  D.tasks.push({id:uid(), title, category:document.getElementById('tCat').value.trim()||'General',
+    due:document.getElementById('tDue').value, priority:document.getElementById('tPri').value,
+    done:false, created:Date.now()});
+  save();
+  document.getElementById('tTitle').value='';
+  document.getElementById('tCat').value='';
+  document.getElementById('tDue').value='';
+  renderAll();
+}
+
+function toggleTask(id){ const t=D.tasks.find(t=>t.id===id); if(t){t.done=!t.done;save();renderAll();} }
+function deleteTask(id){ D.tasks=D.tasks.filter(t=>t.id!==id); save(); renderAll(); }
+
+function renderTasks(){
+  const cats = Array.from(new Set(D.tasks.map(t=>t.category))).sort();
+  const catSel = document.getElementById('tfCat');
+  const curCat = catSel.value;
+  catSel.innerHTML='<option value="all">All categories</option>'+cats.map(c=>`<option ${c===curCat?'selected':''}>${H(c)}</option>`).join('');
+
+  const sf=document.getElementById('tfStatus').value;
+  const cf=catSel.value;
+  const so=document.getElementById('tSort').value;
+
+  let list = D.tasks.filter(t=> sf==='all'?true:(sf==='open'?!t.done:t.done))
+    .filter(t=> cf==='all'?true:t.category===cf);
+  if(so==='due') list.sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999'));
+  else if(so==='priority') list.sort((a,b)=>PRI_RANK[a.priority]-PRI_RANK[b.priority]);
+  else list.sort((a,b)=>b.created-a.created);
+
+  const tbody = document.getElementById('taskTbody');
+  const empty = document.getElementById('taskEmpty');
+  if(!list.length){ tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML = list.map(t=>{
+    const ov=t.due&&!t.done&&t.due<todayStr();
+    return `<tr class="${t.done?'':''}">
+      <td><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${t.id}')"></td>
+      <td style="${t.done?'text-decoration:line-through;color:var(--muted)':''}">${H(t.title)}</td>
+      <td><span class="badge cat">${H(t.category)}</span></td>
+      <td style="${ov?'color:var(--red);font-weight:700':''}">${fmtDate(t.due)}</td>
+      <td><span class="badge ${t.priority}">${t.priority}</span></td>
+      <td><button class="ghost" onclick="deleteTask('${t.id}')">Delete</button></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════
+   QBANK / MCAT
+════════════════════════════════════════════════ */
+function qKey(s,t){ return s+'::'+t; }
+function getQP(s,t){ return D.qbank[qKey(s,t)]||{done:0,correct:0}; }
+
+function updateQbank(s,t,field,val,total){
+  const k=qKey(s,t);
+  if(!D.qbank[k]) D.qbank[k]={done:0,correct:0};
+  let v=parseInt(val,10); if(isNaN(v)||v<0) v=0;
+  if(field==='done'){ v=Math.min(v,total); D.qbank[k].done=v; if(D.qbank[k].correct>v) D.qbank[k].correct=v; }
+  else { v=Math.min(v,D.qbank[k].done); D.qbank[k].correct=v; }
+  save(); renderQbank(); renderDashboard();
+}
+
+function renderQbank(){
+  let grandTotal=0,grandDone=0,grandCorrect=0;
+  const subjStats=[];
+
+  const html = QBANK.map(([subj,topics])=>{
+    let st=0,sd=0,sc=0;
+    const rows = topics.map(([topic,total])=>{
+      const p=getQP(subj,topic); st+=total; sd+=p.done; sc+=p.correct;
+      const pct=p.done>0?Math.round(p.correct/p.done*100):null;
+      const cls=accCls(pct,p.done);
+      const rowCls=pct!==null&&pct<60?'row-red':(pct!==null&&pct<75?'row-amber':'');
+      const cvg=total>0?(p.done/total*100):0;
+      const nt=D.topicNotes[qKey(subj,topic)];
+      const hasInfo=nt&&(nt.flagged||(nt.notes&&nt.notes.trim())||(nt.links&&nt.links.length));
+      return `<tr class="${rowCls}">
+        <td><button class="topic-btn" onclick="openTopicModal('${A(subj)}','${A(topic)}')">${H(topic)}</button>${hasInfo?'<span title="Has notes/links">📌</span>':''}</td>
+        <td style="color:var(--muted)">${total}</td>
+        <td><div style="display:flex;align-items:center;gap:6px">
+          <input type="number" class="qnum" min="0" max="${total}" value="${p.done}" onchange="updateQbank('${A(subj)}','${A(topic)}','done',this.value,${total})">
+          <div class="pbar"><div class="pbar-fill" style="width:${cvg}%"></div></div>
+        </div></td>
+        <td><input type="number" class="qnum" min="0" max="${p.done}" value="${p.correct}" onchange="updateQbank('${A(subj)}','${A(topic)}','correct',this.value,${total})"></td>
+        <td class="${cls}">${pct!==null?pct+'%':'—'}</td>
+      </tr>`;
+    }).join('');
+    grandTotal+=st; grandDone+=sd; grandCorrect+=sc;
+    const sp=sd>0?Math.round(sc/sd*100):null;
+    subjStats.push({subj,pct:sp,done:sd});
+    const scvg=st>0?Math.round(sd/st*100):0;
+    return `<details class="qs">
+      <summary>${H(subj)} <span style="font-weight:400;color:var(--muted);font-size:12px">(${st})</span>
+        <span class="sum-right">
+          <span>${sd}/${st} done (${scvg}%)</span>
+          <div class="pbar"><div class="pbar-fill" style="width:${scvg}%"></div></div>
+          <span class="${accCls(sp,sd)}">${sp!==null?sp+'% correct':'—'}</span>
+        </span>
+      </summary>
+      <div style="padding:8px 14px">
+        <table><thead><tr><th>Topic</th><th>Total</th><th>Done</th><th>Correct</th><th>Accuracy</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+      </div>
+    </details>`;
+  }).join('');
+
+  document.getElementById('qbankSubjects').innerHTML=html;
+
+  const gPct=grandDone>0?Math.round(grandCorrect/grandDone*100):null;
+  const gCvg=Math.round(grandDone/grandTotal*100);
+  const weak=subjStats.filter(s=>s.done>0).sort((a,b)=>a.pct-b.pct)[0];
+  document.getElementById('qbankCards').innerHTML=`
+    <div class="card"><div class="card-label">Completed</div><div class="card-value">${grandDone}/${grandTotal}</div><div class="card-sub">${gCvg}% coverage</div></div>
+    <div class="card"><div class="card-label">Accuracy</div><div class="card-value">${gPct!==null?gPct+'%':'—'}</div><div class="card-sub">${grandCorrect} correct of ${grandDone}</div></div>
+    <div class="card"><div class="card-label">Weakest subject</div><div class="card-value" style="font-size:16px">${weak?weak.pct+'%':'—'}</div><div class="card-sub">${weak?H(weak.subj):'Log progress to see'}</div></div>
+  `;
+
+  const labeled=subjStats.filter(s=>s.done>0);
+  mkChart('qbankAccChart',{type:'bar',data:{
+    labels:labeled.map(s=>s.subj),
+    datasets:[{label:'Accuracy %',data:labeled.map(s=>s.pct),
+      backgroundColor:labeled.map(s=>s.pct>=75?'#10b981':(s.pct>=60?'#f59e0b':'#ef4444'))}]
+  },options:{responsive:true,scales:{y:{min:0,max:100}},plugins:{legend:{display:false}}}});
+
+  // Weak topics sidebar in MCAT tab
+  const allTS=allTopicStats();
+  const top6=allTS.filter(i=>i.pct!==null&&i.pct<75).sort((a,b)=>a.pct-b.pct).slice(0,6);
+  const wEl=document.getElementById('mcatWeakList');
+  if(wEl) wEl.innerHTML=top6.length?top6.map(revItemHtml).join(''):
+    '<div class="empty">No weak topics yet.</div>';
+}
+
+function addSession(){
+  const topic=document.getElementById('sessTopic').value.trim();
+  const hrs=parseFloat(document.getElementById('sessHrs').value);
+  if(!topic||isNaN(hrs)) return;
+  D.mcatSessions.push({id:uid(), date:document.getElementById('sessDate').value||todayStr(), topic, hours:hrs, notes:document.getElementById('sessNotes').value.trim()});
+  save();
+  document.getElementById('sessTopic').value='';
+  document.getElementById('sessHrs').value='';
+  document.getElementById('sessNotes').value='';
+  renderAll();
+}
+function deleteSession(id){ D.mcatSessions=D.mcatSessions.filter(s=>s.id!==id); save(); renderAll(); }
+
+function addScore(){
+  const name=document.getElementById('scoreName').value.trim();
+  const score=parseInt(document.getElementById('scoreVal').value,10);
+  if(!name||isNaN(score)) return;
+  D.mcatScores.push({id:uid(), date:document.getElementById('scoreDate').value||todayStr(), name, score});
+  save();
+  document.getElementById('scoreName').value='';
+  document.getElementById('scoreVal').value='';
+  renderAll();
+}
+function deleteScore(id){ D.mcatScores=D.mcatScores.filter(s=>s.id!==id); save(); renderAll(); }
+
+function renderMcat(){
+  renderQbank();
+  const sessList=D.mcatSessions.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const sb=document.getElementById('sessTbody');
+  sb.innerHTML=sessList.map(s=>`<tr><td>${fmtDate(s.date)}</td><td>${H(s.topic)}</td><td>${s.hours}</td><td>${H(s.notes||'')}</td><td><button class="ghost" onclick="deleteSession('${s.id}')">Del</button></td></tr>`).join('');
+  document.getElementById('sessEmpty').style.display=sessList.length?'none':'block';
+
+  const scores=D.mcatScores.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const scb=document.getElementById('scoreTbody');
+  scb.innerHTML=scores.slice().reverse().map(s=>`<tr><td>${fmtDate(s.date)}</td><td>${H(s.name)}</td><td>${s.score}</td><td><button class="ghost" onclick="deleteScore('${s.id}')">Del</button></td></tr>`).join('');
+  document.getElementById('scoreEmpty').style.display=scores.length?'none':'block';
+
+  mkChart('scoreChart',{type:'line',data:{
+    labels:scores.map(s=>fmtDate(s.date)),
+    datasets:[{label:'Score',data:scores.map(s=>s.score),borderColor:'#4f46e5',backgroundColor:'rgba(79,70,229,.1)',tension:.3,fill:true}]
+  },options:{responsive:true,scales:{y:{min:472,max:528}},plugins:{legend:{display:false}}}});
+
+  const totalHrs=D.mcatSessions.reduce((s,x)=>s+x.hours,0);
+  const weekAgo=new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+  const wkHrs=D.mcatSessions.filter(s=>new Date(s.date+'T00:00:00')>=weekAgo).reduce((s,x)=>s+x.hours,0);
+  const latest=D.mcatScores.length?D.mcatScores.reduce((a,b)=>a.date>b.date?a:b,D.mcatScores[0]):null;
+  const best=D.mcatScores.length?Math.max(...D.mcatScores.map(s=>s.score)):null;
+  document.getElementById('mcatCards').innerHTML=`
+    <div class="card"><div class="card-label">Total study hours</div><div class="card-value">${totalHrs.toFixed(1)}</div><div class="card-sub">${D.mcatSessions.length} sessions</div></div>
+    <div class="card"><div class="card-label">Last 7 days</div><div class="card-value">${wkHrs.toFixed(1)}h</div></div>
+    <div class="card"><div class="card-label">Latest score</div><div class="card-value">${latest?latest.score:'—'}</div><div class="card-sub">${latest?H(latest.name):''}</div></div>
+    <div class="card"><div class="card-label">Best score</div><div class="card-value">${best!==null?best:'—'}</div><div class="card-sub">out of 528</div></div>
+  `;
+}
+
+/* ════════════════════════════════════════════════
+   TOPIC MODAL
+════════════════════════════════════════════════ */
+let curTopic = null;
+
+function getTN(s,t){ const k=qKey(s,t); if(!D.topicNotes[k]) D.topicNotes[k]={notes:'',links:[],flagged:false}; return D.topicNotes[k]; }
+
+function openTopicModal(subj,topic){
+  curTopic={subj,topic};
+  const nt=getTN(subj,topic);
+  const p=getQP(subj,topic);
+  const def=QBANK.find(([s])=>s===subj);
+  const entry=def?def[1].find(([t])=>t===topic):null;
+  const total=entry?entry[1]:0;
+  const pct=p.done>0?Math.round(p.correct/p.done*100):null;
+  document.getElementById('tmTitle').textContent=topic;
+  document.getElementById('tmSub').textContent=`${subj} · ${p.done}/${total} done${pct!==null?' · '+pct+'% correct':' · not started'}`;
+  document.getElementById('tmNotes').value=nt.notes||'';
+  document.getElementById('tmFlag').checked=!!nt.flagged;
+  renderTopicLinks();
+  document.getElementById('topicOverlay').classList.add('open');
+}
+
+function closeTopicModal(){ document.getElementById('topicOverlay').classList.remove('open'); curTopic=null; renderAll(); }
+function saveTopicNotes(v){ if(!curTopic) return; getTN(curTopic.subj,curTopic.topic).notes=v; save(); }
+function toggleFlag(v){ if(!curTopic) return; getTN(curTopic.subj,curTopic.topic).flagged=v; save(); }
+
+function renderTopicLinks(){
+  if(!curTopic) return;
+  const nt=getTN(curTopic.subj,curTopic.topic);
+  const el=document.getElementById('tmLinks');
+  el.innerHTML=nt.links.length?nt.links.map(l=>`<div class="link-row"><a href="${H(l.url)}" target="_blank" rel="noopener">${H(l.label||l.url)}</a><button class="ghost" onclick="deleteTopicLink('${l.id}')">Remove</button></div>`).join(''):'<div style="font-size:13px;color:var(--muted);padding:4px 0">No links yet.</div>';
+}
+
+function addTopicLink(){
+  if(!curTopic) return;
+  let url=document.getElementById('tmLinkUrl').value.trim();
+  if(!url) return;
+  if(!/^https?:\/\//i.test(url)) url='https://'+url;
+  const label=document.getElementById('tmLinkLabel').value.trim();
+  getTN(curTopic.subj,curTopic.topic).links.push({id:uid(),label,url});
+  save(); document.getElementById('tmLinkLabel').value=''; document.getElementById('tmLinkUrl').value=''; renderTopicLinks();
+}
+
+function deleteTopicLink(id){
+  if(!curTopic) return;
+  const nt=getTN(curTopic.subj,curTopic.topic);
+  nt.links=nt.links.filter(l=>l.id!==id); save(); renderTopicLinks();
+}
+
+/* ════════════════════════════════════════════════
+   MISTAKES
+════════════════════════════════════════════════ */
+function addMistake(){
+  const topic=document.getElementById('mTopic').value.trim();
+  const desc=document.getElementById('mDesc').value.trim();
+  if(!topic) return;
+  D.mistakes.push({id:uid(), date:document.getElementById('mDate').value||todayStr(),
+    section:document.getElementById('mSection').value,
+    topic, errorType:document.getElementById('mError').value,
+    description:desc, notes:document.getElementById('mNotes').value.trim(), resolved:false});
+  save();
+  document.getElementById('mTopic').value='';
+  document.getElementById('mDesc').value='';
+  document.getElementById('mNotes').value='';
+  renderAll();
+}
+
+function toggleMistake(id){ const m=D.mistakes.find(m=>m.id===id); if(m){m.resolved=!m.resolved;save();renderAll();} }
+function deleteMistake(id){ D.mistakes=D.mistakes.filter(m=>m.id!==id); save(); renderAll(); }
+
+function renderMistakes(){
+  const sf=document.getElementById('mfSection').value;
+  const ef=document.getElementById('mfError').value;
+  const rf=document.getElementById('mfResolved').value;
+  let list=D.mistakes.filter(m=> (sf==='all'||m.section===sf) && (ef==='all'||m.errorType===ef) && (rf==='all'?true:(rf==='open'?!m.resolved:m.resolved)));
+  list=list.slice().sort((a,b)=>b.date.localeCompare(a.date));
+
+  const el=document.getElementById('mistakeList');
+  const empty=document.getElementById('mistakeEmpty');
+  if(!list.length){ el.innerHTML=''; empty.style.display='block'; }
+  else {
+    empty.style.display='none';
+    el.innerHTML=list.map(m=>`<div class="mistake-card ${m.resolved?'resolved-card':''}">
+      <div class="mistake-header">
+        <div>
+          <strong>${H(m.topic)}</strong>
+          <div class="mistake-meta">${H(m.section)} · ${fmtDate(m.date)} · <span class="error-type-chip ${m.errorType.replace(/\s/g,'-')}">${H(m.errorType)}</span></div>
+          ${m.description?`<div style="font-size:13px;margin-top:4px;color:#374151">${H(m.description)}</div>`:''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="ghost" onclick="toggleMistake('${m.id}')">${m.resolved?'Unresolve':'✓ Resolve'}</button>
+          <button class="ghost" onclick="deleteMistake('${m.id}')">Del</button>
+        </div>
+      </div>
+      ${m.notes?`<div class="mistake-notes">💡 ${H(m.notes)}</div>`:''}
+    </div>`).join('');
+  }
+
+  // Stats charts
+  const errCounts={}; ERROR_TYPES.forEach(e=>errCounts[e]=0);
+  D.mistakes.forEach(m=>{ if(errCounts[m.errorType]!==undefined) errCounts[m.errorType]++; });
+  const secCounts={}; MCAT_SECTIONS.forEach(s=>secCounts[s]=0);
+  D.mistakes.forEach(m=>{ if(secCounts[m.section]!==undefined) secCounts[m.section]++; });
+
+  mkChart('errTypeChart',{type:'doughnut',data:{
+    labels:ERROR_TYPES,
+    datasets:[{data:ERROR_TYPES.map(e=>errCounts[e]),backgroundColor:['#fbbf24','#f87171','#f9a8d4','#818cf8','#fb923c','#86efac']}]
+  },options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}});
+
+  mkChart('errSectionChart',{type:'bar',data:{
+    labels:MCAT_SECTIONS,
+    datasets:[{label:'Mistakes',data:MCAT_SECTIONS.map(s=>secCounts[s]),backgroundColor:['#818cf8','#34d399','#f87171','#fbbf24']}]
+  },options:{responsive:true,plugins:{legend:{display:false}}}});
+}
+
+/* ════════════════════════════════════════════════
+   REVIEW
+════════════════════════════════════════════════ */
+function allTopicStats(){
+  const out=[];
+  QBANK.forEach(([subject,topics])=>topics.forEach(([topic,total])=>{
+    const p=getQP(subject,topic);
+    const pct=p.done>0?Math.round(p.correct/p.done*100):null;
+    const nt=D.topicNotes[qKey(subject,topic)];
+    out.push({subject,topic,total,done:p.done,correct:p.correct,pct,flagged:!!(nt&&nt.flagged)});
+  }));
+  return out;
+}
+
+function revItemHtml(i){
+  const cls=i.pct!==null&&i.pct<60?'ri-red':(i.pct!==null&&i.pct<75?'ri-amber':'');
+  return `<div class="rev-item ${cls}" onclick="openTopicModal('${A(i.subject)}','${A(i.topic)}')">
+    <div class="rev-left"><div>${H(i.topic)}</div><div class="rev-subj">${H(i.subject)} · ${i.done}/${i.total}</div></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      ${i.flagged?'<span>🚩</span>':''}
+      <span class="${accCls(i.pct,i.done)}">${i.pct!==null?i.pct+'%':'—'}</span>
+    </div>
+  </div>`;
+}
+
+function renderReview(){
+  const all=allTopicStats();
+  const needs=all.filter(i=>i.pct!==null&&i.pct<75).sort((a,b)=>a.pct-b.pct);
+  const flagged=all.filter(i=>i.flagged).sort((a,b)=>(a.pct??999)-(b.pct??999));
+  const nw=document.getElementById('revNeedsWork');
+  const rf=document.getElementById('revFlagged');
+  nw.innerHTML=needs.length?needs.map(revItemHtml).join(''):'<div class="empty">No weak topics. 🎉</div>';
+  rf.innerHTML=flagged.length?flagged.map(revItemHtml).join(''):'<div class="empty">None flagged. Open a topic in MCAT tab to flag it.</div>';
+}
+
+/* ════════════════════════════════════════════════
+   HEALTH
+════════════════════════════════════════════════ */
+function addWeight(){
+  const w=parseFloat(document.getElementById('wVal').value);
+  if(isNaN(w)) return;
+  D.weights.push({id:uid(), date:document.getElementById('wDate').value||todayStr(), weight:w});
+  save(); document.getElementById('wVal').value=''; renderAll();
+}
+function deleteWeight(id){ D.weights=D.weights.filter(w=>w.id!==id); save(); renderAll(); }
+
+function addFood(){
+  const desc=document.getElementById('fDesc').value.trim();
+  if(!desc) return;
+  const calRaw=document.getElementById('fCal').value;
+  D.food.push({id:uid(), date:document.getElementById('fDate').value||todayStr(),
+    meal:document.getElementById('fMeal').value, desc, cal:calRaw===''?null:parseInt(calRaw,10)});
+  save(); document.getElementById('fDesc').value=''; document.getElementById('fCal').value=''; renderAll();
+}
+function deleteFood(id){ D.food=D.food.filter(f=>f.id!==id); save(); renderAll(); }
+
+function renderHealth(){
+  const wts=D.weights.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  const latW=wts.length?wts[wts.length-1]:null;
+  const firstW=wts.length?wts[0]:null;
+  const totChg=(latW&&firstW&&wts.length>1)?latW.weight-firstW.weight:null;
+  const today=todayStr();
+  const todayCal=D.food.filter(f=>f.date===today&&f.cal!=null).reduce((s,f)=>s+f.cal,0);
+
+  document.getElementById('healthCards').innerHTML=`
+    <div class="card"><div class="card-label">Current weight</div><div class="card-value">${latW?latW.weight:'—'}</div><div class="card-sub">${latW?fmtDate(latW.date):'No entries'}</div></div>
+    <div class="card"><div class="card-label">Total change</div><div class="card-value">${totChg!==null?(totChg>0?'+':'')+totChg.toFixed(1):'—'}</div><div class="card-sub">since first log</div></div>
+    <div class="card"><div class="card-label">Today's calories</div><div class="card-value">${todayCal||'—'}</div><div class="card-sub">${D.food.filter(f=>f.date===today).length} entries logged</div></div>
+  `;
+
+  const wtb=document.getElementById('weightTbody');
+  wtb.innerHTML=wts.slice().reverse().map((w,_,arr)=>{
+    const i=wts.findIndex(x=>x.id===w.id);
+    const prev=i>0?wts[i-1]:null;
+    const ch=prev?w.weight-prev.weight:null;
+    const chColor = ch>0?'var(--red)':(ch<0?'var(--green)':'var(--muted)');
+    const chStr=ch===null?'—':`<span style="color:${chColor}">${ch>0?'+':''}${ch.toFixed(1)}</span>`;
+    return `<tr><td>${fmtDate(w.date)}</td><td>${w.weight}</td><td>${chStr}</td><td><button class="ghost" onclick="deleteWeight('${w.id}')">Del</button></td></tr>`;
+  }).join('');
+  document.getElementById('weightEmpty').style.display=wts.length?'none':'block';
+
+  const fds=D.food.slice().sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('foodTbody').innerHTML=fds.map(f=>`<tr><td>${fmtDate(f.date)}</td><td>${H(f.meal)}</td><td>${H(f.desc)}</td><td>${f.cal??'—'}</td><td><button class="ghost" onclick="deleteFood('${f.id}')">Del</button></td></tr>`).join('');
+  document.getElementById('foodEmpty').style.display=fds.length?'none':'block';
+
+  mkChart('weightChart',{type:'line',data:{
+    labels:wts.map(w=>fmtDate(w.date)),
+    datasets:[{label:'Weight',data:wts.map(w=>w.weight),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.1)',tension:.3,fill:true}]
+  },options:{responsive:true,plugins:{legend:{display:false}}}});
+}
+
+/* ════════════════════════════════════════════════
+   CUSTOM TABS (NOTION-LIKE)
+════════════════════════════════════════════════ */
+function addBlock(tabId, type){
+  const tab=D.customTabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  const block={id:uid(), type, content:'', items:[]};
+  tab.blocks.push(block);
+  save(); renderCustomTab(tabId);
+  // Focus last block
+  setTimeout(()=>{
+    const el=document.querySelector(`[data-block="${block.id}"] textarea, [data-block="${block.id}"] input`);
+    if(el) el.focus();
+  },50);
+}
+
+function deleteBlock(tabId, blockId){
+  const tab=D.customTabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  tab.blocks=tab.blocks.filter(b=>b.id!==blockId);
+  save(); renderCustomTab(tabId);
+}
+
+function moveBlock(tabId, blockId, dir){
+  const tab=D.customTabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  const i=tab.blocks.findIndex(b=>b.id===blockId);
+  if(i<0) return;
+  const ni=i+dir;
+  if(ni<0||ni>=tab.blocks.length) return;
+  [tab.blocks[i],tab.blocks[ni]]=[tab.blocks[ni],tab.blocks[i]];
+  save(); renderCustomTab(tabId);
+}
+
+function updateBlock(tabId, blockId, content){
+  const tab=D.customTabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  const block=tab.blocks.find(b=>b.id===blockId);
+  if(block){ block.content=content; save(); }
+}
+
+function toggleCheckItem(tabId, blockId, itemId){
+  const tab=D.customTabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  const block=tab.blocks.find(b=>b.id===blockId);
+  if(!block) return;
+  const item=block.items.find(i=>i.id===itemId);
+  if(item){ item.done=!item.done; save(); renderCustomTab(tabId); }
+}
+
+function addCheckItem(tabId, blockId, text){
+  const tab=D.customTabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  const block=tab.blocks.find(b=>b.id===blockId);
+  if(!block) return;
+  block.items.push({id:uid(), text, done:false});
+  save(); renderCustomTab(tabId);
+}
+
+function deleteCheckItem(tabId, blockId, itemId){
+  const tab=D.customTabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  const block=tab.blocks.find(b=>b.id===blockId);
+  if(block){ block.items=block.items.filter(i=>i.id!==itemId); save(); renderCustomTab(tabId); }
+}
+
+function addTabLink(tabId, blockId){
+  const tab=D.customTabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  const block=tab.blocks.find(b=>b.id===blockId);
+  if(!block) return;
+  const labelEl=document.getElementById('tl-label-'+blockId);
+  const urlEl=document.getElementById('tl-url-'+blockId);
+  let url=(urlEl?.value||'').trim();
+  if(!url) return;
+  if(!/^https?:\/\//i.test(url)) url='https://'+url;
+  block.items.push({id:uid(), label:(labelEl?.value||'').trim(), url});
+  save(); renderCustomTab(tabId);
+}
+
+function deleteTabLink(tabId, blockId, linkId){
+  const tab=D.customTabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  const block=tab.blocks.find(b=>b.id===blockId);
+  if(block){ block.items=block.items.filter(i=>i.id!==linkId); save(); renderCustomTab(tabId); }
+}
+
+function updateTabName(tabId, name){
+  const tab=D.customTabs.find(t=>t.id===tabId);
+  if(tab){ tab.name=name; save(); renderNav(); }
+}
+
+function renderCustomTab(tabId){
+  const tab=D.customTabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  const el=document.getElementById('tab-custom-'+tabId);
+  if(!el) return;
+
+  const blocksHtml=tab.blocks.map((block,idx)=>{
+    let innerHtml='';
+    if(block.type==='heading'){
+      innerHtml=`<textarea class="notion-h" placeholder="Heading..." rows="1" onblur="updateBlock('${A(tabId)}','${A(block.id)}',this.value)" oninput="autoResize(this)">${H(block.content)}</textarea>`;
+    } else if(block.type==='divider'){
+      innerHtml=`<hr class="notion-divider">`;
+    } else if(block.type==='text'){
+      innerHtml=`<textarea class="notion-text" placeholder="Write something..." rows="3" onblur="updateBlock('${A(tabId)}','${A(block.id)}',this.value)" oninput="autoResize(this)">${H(block.content)}</textarea>`;
+    } else if(block.type==='checklist'){
+      const items=block.items.map(item=>`<div class="checklist-item">
+        <input type="checkbox" ${item.done?'checked':''} onchange="toggleCheckItem('${A(tabId)}','${A(block.id)}','${A(item.id)}')">
+        <input class="ci-text" value="${H(item.text)}" placeholder="To-do item..." onblur="(()=>{const tab=D.customTabs.find(t=>t.id==='${A(tabId)}');const block=tab&&tab.blocks.find(b=>b.id==='${A(block.id)}');const item=block&&block.items.find(i=>i.id==='${A(item.id)}');if(item){item.text=this.value;save();}})()">
+        <button class="ci-del" onclick="deleteCheckItem('${A(tabId)}','${A(block.id)}','${A(item.id)}')">&times;</button>
+      </div>`).join('');
+      innerHtml=`<div>${items}</div>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <input id="ci-new-${A(block.id)}" placeholder="Add item..." style="flex:1;padding:5px 8px;border:1px dashed var(--border);border-radius:6px;font:inherit;font-size:13px;outline:none" onkeydown="if(event.key==='Enter'){addCheckItem('${A(tabId)}','${A(block.id)}',this.value);this.value='';}">
+          <button class="ghost" onclick="addCheckItem('${A(tabId)}','${A(block.id)}',document.getElementById('ci-new-${A(block.id)}').value);document.getElementById('ci-new-${A(block.id)}').value=''">+</button>
+        </div>`;
+    } else if(block.type==='links'){
+      const linksHtml=block.items.map(l=>`<div class="link-row"><a href="${H(l.url)}" target="_blank" rel="noopener">${H(l.label||l.url)}</a><button class="ghost" onclick="deleteTabLink('${A(tabId)}','${A(block.id)}','${A(l.id)}')">Remove</button></div>`).join('');
+      innerHtml=`<div class="links-block-list">${linksHtml||'<div style="color:var(--muted);font-size:12px;padding:4px 0">No links yet.</div>'}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+          <input id="tl-label-${A(block.id)}" placeholder="Label (opt.)" style="padding:5px 8px;border:1px solid var(--border);border-radius:6px;font:inherit;font-size:12px;width:140px">
+          <input id="tl-url-${A(block.id)}" placeholder="https://..." style="flex:1;min-width:160px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font:inherit;font-size:12px">
+          <button class="ghost" onclick="addTabLink('${A(tabId)}','${A(block.id)}')">Add link</button>
+        </div>`;
+    }
+    return `<div class="block-wrap" data-block="${block.id}">
+      <div class="block-ctrl">
+        <button title="Move up" onclick="moveBlock('${A(tabId)}','${A(block.id)}',-1)">↑</button>
+        <button title="Move down" onclick="moveBlock('${A(tabId)}','${A(block.id)}',1)">↓</button>
+        <button title="Delete block" onclick="deleteBlock('${A(tabId)}','${A(block.id)}')" style="color:var(--red)">×</button>
+      </div>
+      ${innerHtml}
+    </div>`;
+  }).join('');
+
+  el.innerHTML=`
+    <div style="max-width:900px;margin:0 auto">
+      <input class="notion-page-title" placeholder="Page title..." value="${H(tab.name)}"
+        onblur="updateTabName('${A(tabId)}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
+      ${blocksHtml}
+      <div class="block-add-bar">
+        <button onclick="addBlock('${A(tabId)}','text')">+ Text</button>
+        <button onclick="addBlock('${A(tabId)}','heading')">+ Heading</button>
+        <button onclick="addBlock('${A(tabId)}','checklist')">+ Checklist</button>
+        <button onclick="addBlock('${A(tabId)}','links')">+ Links</button>
+        <button onclick="addBlock('${A(tabId)}','divider')">— Divider</button>
+      </div>
+    </div>
+  `;
+
+  // Auto-resize all textareas
+  el.querySelectorAll('textarea').forEach(ta=>autoResize(ta));
+}
+
+/* ════════════════════════════════════════════════
+   RENDER ALL
+════════════════════════════════════════════════ */
+function renderAll(){
+  renderNav();
+  renderDashboard();
+  renderTasks();
+  renderMcat();
+  renderMistakes();
+  renderReview();
+  renderHealth();
+  if(activeCustomTab) renderCustomTab(activeCustomTab);
+}
+
+/* ════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════ */
+// Header
+document.getElementById('hdrDate').textContent = new Date().toLocaleDateString(undefined,{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+const dLeft=daysUntil(D.studyPlan.testDate||TEST_DATE);
+document.getElementById('hdrCountdown').textContent = `${Math.max(0,dLeft)} days to MCAT`;
+
+// Default dates in forms
+['sessDate','scoreDate','mDate','wDate','fDate'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.value=todayStr();
+});
+
+renderAll();
+</script>
+</body>
+</html>
